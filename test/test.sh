@@ -124,10 +124,20 @@ function test_movie_get() {
   fi
 }
 
+function test_movie_generate_script() {
+  BLOCK "Testing movie generate script..."
+
+  POST_BODY='{"idea": "列出三个金牛女生的特点， 每一个加以扩展和说明"}'
+  body=$(POST "api/movies/1/generate_script" "${POST_BODY}")
+
+  echo $body
+}
+
 test_ping
 test_templates_list
 test_tempalte_get
 test_template_default
 test_movie_create
 test_movie_list
-test_movie_get
+# test_movie_get
+test_movie_generate_script

@@ -2,9 +2,12 @@ package server
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/cmingxu/mpu/ai"
 	"github.com/cmingxu/mpu/model"
 
 	"github.com/gin-gonic/gin"
@@ -130,6 +133,55 @@ func (s *Server) Start() error {
 		} else {
 			c.JSON(200, gin.H{"data": movie})
 		}
+	})
+
+	api.POST("/movies/:movie_id/generate_script", func(c *gin.Context) {
+		moveieId := c.Param("movie_id")
+		movieIdInt, err := strconv.Atoi(moveieId)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Invalid movie ID"})
+			return
+		}
+
+		movie, err := model.GetMovie(int64(movieIdInt))
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
+		var binding struct {
+			Idea string `json:"idea"`
+		}
+
+		if err := c.ShouldBindJSON(&binding); err != nil {
+			c.JSON(400, gin.H{"error": "Invalid request body"})
+			return
+		}
+
+		if movie.Idea.String != binding.Idea {
+			movie.Idea = sql.NullString{String: binding.Idea, Valid: true}
+			if err := movie.Update(); err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+
+				return
+			}
+		}
+
+		scripts, err := ai.GetClient().GenerateScript(c, movie.Idea.String, time.Minute*3)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
+		content, err := json.Marshal(scripts)
+		movie.ScriptContent = sql.NullString{String: string(content), Valid: true}
+
+		if err := movie.Update(); err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(200, gin.H{"data": movie})
 	})
 
 	return s.engine.Run(s.addr)

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/cmingxu/mpu/ai"
 	"github.com/cmingxu/mpu/model"
 	"github.com/cmingxu/mpu/server"
 
@@ -44,6 +45,10 @@ var commands = []*cli2.Command{
 			if err := model.InitDB(); err != nil {
 				return err
 			}
+
+			ai.NewClient(c.String("model"),
+				c.String("openai-key"),
+				c.String("openai-api"))
 
 			s := server.New(c.String("listen-addr"))
 			return s.Start()

@@ -17,7 +17,7 @@ API List
 ### Post /api/movies body: {"idea": "example idea"}
 
 ## Generate Script From Idea
-###  Post /api/generate_script body: {"movie_id": "example_movie_id", "idea": "example_idea", "prompt": "example idea"}
+###  Post /api/movies/:movie_id/generate_script body: {"movie_id": "example_movie_id", "idea": "example_idea", "prompt": "example idea"}
 
 ## Edit Script & Generate Corresponding English Subtitles
 ### Post /api/:movie_id/edit_script body: {"script": "example script"}
