@@ -8,33 +8,48 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	openai "github.com/sashabaranov/go-openai"
-	log "github.com/sirupsen/logrus"
 )
 
 const WordCountPerSecond = 6 // 每秒生成的字数
 
 const SystemPrompt = `
-You are a video script generator. Your task is to generate video script based on the provided user input.
-you need to generate long text which further be used to generate a video script base on the provided text, you can
-extend the idea with conversational text / short story to refflect the idea / old chinese saying to reflect the idea.
+You are a video script generator. Your task is to generate video title, video subtitle in chinese, translation subtitle into english, 
+and generate image generation prompt for each subtitle based on the provided user input.
+
+you can extend the idea with conversational text / short story to refflect the idea / old chinese saying to reflect the idea.
 
 response should be in chinese, total chinese characters response size should around {{.WordCount}}. then you have to cut response into sequence of
 subtitle, with each subtitle translated into english. each subtitle should be between 10 to 28 characters in chinese,
 and the english translation should not exceeding 14 words.
 The main language of the script is Chinese, with English translation provided for each subtitle.
 
-## Requirements:
-1, response should follow strickly format specified in the response format section.
-2, video scirpt should be in Chinese and English, with each subtitle in a separate line.
-3, script should be in chinese first, followed by english translation.
-4, response with "ERROR[actual_message]" if you can not generage a result, where the "actual_message" is where the real message.
-5, do not respond any other information, just the script in the specified format.
-6, english translate should all in lowercase, and no punctuation.
+## Title requirements:
+1, title should be in chinese, and should not exceed 20 characters.
+2, title should be catchy and reflect the main idea of the video.
+3, title should plain chinese, no english words or symbols.
 
+## subtitle requirements:
+1, video scirpt should be in Chinese
+2, english translate should all in lowercase, and no punctuation.
+
+## image generation prompt requirements:
+1, image generation prompt should be in chinese, and should be descriptive enough for image generation.
+2, the target image should be related to the subtitle.
+3, the porompt must contain 火柴人，矢量图，黑白图标风格，简约白色透明背景, 避免黑色底色, 线条粗细适中，线条清晰，线条流畅, 线条简洁, 线条不交叉, 线条不重叠, 线条不模糊, 线条不粗糙, 线条不复杂, 线条不花哨, 线条不夸张, 线条不浮夸, 线条不繁琐, 线条不冗余.
+
+
+## response
+1, response should be a json object with title and script_items.
+2, only return the json object, do not add any other text.
+
+
+## If you failed to generate content
+response with "ERROR[actual_message]" if you can not generage a result, where the "actual_message" is where the real message.
 
 ## Response format:
-[{"cn":"中文字幕","en":"English Subtitle"},{"cn":"中文字幕","en":"English Subtitle"}]
+{"title": "视频标题", "script_items": [{"cn":"中文字幕","en":"English Subtitle", "image_prompt": ""},{"cn":"中文字幕","en":"English Subtitle", "image_prompt": ""}]}
 `
 
 var (
@@ -47,11 +62,6 @@ type Client struct {
 	key      string         // API key
 	model    string         // Model name
 	client   *openai.Client // OpenAI client
-}
-
-type ScriptItem struct {
-	ZhSubtitle string `json:"zh_subtitle"` // Chinese subtitle
-	EnSubtitle string `json:"en_subtitle"` // English subtitle
 }
 
 func GetClient() *Client {
@@ -78,14 +88,15 @@ func NewClient(model, key, endpoint string) *Client {
 	return c
 }
 
-func (c *Client) GenerateScript(ctx context.Context, prompt string, expectDuration time.Duration) (string, error) {
-	log.Infof("Generating script with prompt: %s, expect duration: %s", prompt, expectDuration)
+func (c *Client) GenerateScript(ctx context.Context, prompt string,
+	d time.Duration) (string, error) {
+	log.Info().Msgf("Generating script with prompt: %s, expect duration: %s", prompt, d)
 
 	req := openai.ChatCompletionRequest{
 		Model: c.model,
 	}
 
-	calculatedWordCount := int(expectDuration.Seconds() * WordCountPerSecond)
+	calculatedWordCount := int(d.Seconds() * WordCountPerSecond)
 	systemPromptWithWordCount := strings.ReplaceAll(SystemPrompt, "{{.WordCount}}", strconv.Itoa(calculatedWordCount))
 	req.Messages = []openai.ChatCompletionMessage{
 		{
@@ -103,9 +114,9 @@ func (c *Client) GenerateScript(ctx context.Context, prompt string, expectDurati
 		return "", err
 	}
 
-	log.Infof("SystemPrompt: %s", systemPromptWithWordCount)
-	log.Infof("user prompt: %s", prompt)
-	log.Infof("Received response: %s", resp.Choices[0].Message.Content)
+	log.Info().Msgf("SystemPrompt: %s", systemPromptWithWordCount)
+	log.Info().Msgf("user prompt: %s", prompt)
+	log.Info().Msgf("Received response: %s", resp.Choices[0].Message.Content)
 
 	content := resp.Choices[0].Message.Content
 	if strings.HasPrefix(content, "ERROR[") {

@@ -5,7 +5,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -41,7 +41,7 @@ func InitDB() error {
 	}
 
 	if _, err := tx.Exec(TemplateInitializationStat); err != nil {
-		log.Errorf("failed to initialize templates table: %v", err)
+		log.Warn().Err(err).Msgf("template initialization stat failed, maybe already initialized: %s", TemplateInitializationStat)
 	}
 
 	if err := tx.Commit(); err != nil {

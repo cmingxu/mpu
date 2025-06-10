@@ -25,8 +25,17 @@ API List
 ## Delete Script
 ### Post /api/:movie_id/:script_id/delete
 
+## Generate Voice for all script under movie
+### Post /api/:movie_id/generate_voice
+
+## Generate Voice for script
+### Post /api/:movie_id/scripts/:script_index/generate_voice
+
+## Generate Image for all scripts under movie
+### Post /api/:movie_id/generate_image
+
 ## Generate Image for text clip
-### Post /api/:movie_id/:script_id/generate_image
+### Post /api/:movie_id/scripts/:script_id/generate_image
 
 
 ## List available bgm
@@ -40,3 +49,6 @@ API List
 
 ## Generate movie
 ### /api/:movie_id/generate
+
+## Get Voice list
+### GET /api/voices_list

@@ -91,7 +91,7 @@ function test_template_default() {
 
 function test_movie_create() {
   BLOCK "testing movie create..."
-  create_body='{"name": "Test Movie", "tpl_name": "sign"}'
+  create_body='{"idea": "Test Movie", "tpl_name": "sign"}'
 
   body=$(POST "api/movies" "$create_body")
   echo $body
@@ -133,11 +133,21 @@ function test_movie_generate_script() {
   echo $body
 }
 
+function test_generate_script_image() {
+  BLOCK "Testing movie generate script image..."
+
+  body=$(POST "api/movies/1/generate_image")
+
+  echo $body
+}
+
 test_ping
 test_templates_list
 test_tempalte_get
 test_template_default
 test_movie_create
 test_movie_list
-# test_movie_get
+test_movie_get
 test_movie_generate_script
+test_generate_script_voice
+test_generate_script_image

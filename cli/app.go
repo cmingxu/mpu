@@ -6,6 +6,8 @@ import (
 	"github.com/cmingxu/mpu/server"
 
 	cli2 "github.com/urfave/cli/v2"
+
+	"github.com/rs/zerolog"
 )
 
 var commands = []*cli2.Command{
@@ -35,6 +37,25 @@ var commands = []*cli2.Command{
 				Value:   "",
 				EnvVars: []string{"OPENAI_API"},
 			},
+
+			&cli2.StringFlag{
+				Name:    "volengine-key",
+				Value:   "",
+				EnvVars: []string{"VOLENGINE_KEY"},
+			},
+		},
+
+		Before: func(c *cli2.Context) error {
+			zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
+			zeroLogLevel, err := zerolog.ParseLevel(c.String("log-level"))
+			if err != nil {
+				return err
+			}
+
+			zerolog.SetGlobalLevel(zeroLogLevel)
+
+			return nil
 		},
 
 		Action: func(c *cli2.Context) error {
@@ -50,7 +71,11 @@ var commands = []*cli2.Command{
 				c.String("openai-key"),
 				c.String("openai-api"))
 
-			s := server.New(c.String("listen-addr"))
+			ai.NewTts(c.String("openai-key"))
+
+			ai.NewTxt2Img(c.String("volengine-key"))
+
+			s := server.New(c.String("listen-addr"), c.String("work-dir"))
 			return s.Start()
 		},
 	},

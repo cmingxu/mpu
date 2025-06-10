@@ -36,38 +36,52 @@ CREATE TABLE IF NOT EXISTS movies (
 	title TEXT, -- 标题
 	footer TEXT, -- 底部
 	icon TEXT, -- 图标
-	script_content TEXT, -- 内容
+	script TEXT, -- 内容
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- 创建时间
 );
 `
 
 type Movie struct {
-	Id            int64          `db:"id"`                                   // 电影ID
-	TplName       string         `db:"tpl_name"`                             // 模板类型
-	State         string         `db:"state"`                                // 状态
-	Idea          sql.NullString `db:"idea" json:"idea"`                     // 电影创意
-	Title         sql.NullString `db:"title" json:"title"`                   // 标题
-	Footer        sql.NullString `db:"footer" json:"footer"`                 // 底部
-	Icon          sql.NullString `db:"icon" json:"icon"`                     // 图标
-	ScriptContent sql.NullString `db:"script_content" json:"script_content"` // 内容
-	CreatedAt     time.Time      `db:"created_at"`                           // 创建时间
+	Id        int64          `db:"id"`                   // 电影ID
+	TplName   string         `db:"tpl_name"`             // 模板类型
+	State     string         `db:"state"`                // 状态
+	Idea      sql.NullString `db:"idea" json:"idea"`     // 电影创意
+	Title     sql.NullString `db:"title" json:"title"`   // 标题
+	Footer    sql.NullString `db:"footer" json:"footer"` // 底部
+	Icon      sql.NullString `db:"icon" json:"icon"`     // 图标
+	Script    sql.NullString `db:"script" json:"script"` // 内容
+	CreatedAt time.Time      `db:"created_at"`           // 创建时间
+
+}
+
+type MovieScript struct {
+	Title       string        `json:"title"`        // 视频标题
+	ScriptItems []*ScriptItem `json:"script_items"` // 视频脚本内容
+}
+
+type ScriptItem struct {
+	ZhSubtitle  string `json:"cn"`                   // Chinese subtitle
+	EnSubtitle  string `json:"en"`                   // English subtitle
+	VoicePath   string `json:"voice_path,omitempty"` // Path to the voice file
+	ImagePrompt string `json:"image_prompt"`         // Image generation prompt
+	ImagePath   string `json:"image_path,omitempty"` // Path to the generated image
 }
 
 func NewMovie() *Movie {
 	return &Movie{
-		TplName:       string(Sign),
-		State:         StateInit.String(),
-		Idea:          sql.NullString{},
-		Title:         sql.NullString{},
-		Footer:        sql.NullString{},
-		Icon:          sql.NullString{},
-		ScriptContent: sql.NullString{},
+		TplName: string(Sign),
+		State:   StateInit.String(),
+		Idea:    sql.NullString{},
+		Title:   sql.NullString{},
+		Footer:  sql.NullString{},
+		Icon:    sql.NullString{},
+		Script:  sql.NullString{},
 	}
 }
 
 func (m *Movie) Create() error {
-	if _, err := db.NamedExec("INSERT INTO movies (tpl_name, state, idea, title, footer, icon, script_content)"+
-		"VALUES (:tpl_name, :state, :idea, :title, :footer, :icon, :script_content)", m); err != nil {
+	if _, err := db.NamedExec("INSERT INTO movies (tpl_name, state, idea, title, footer, icon, script)"+
+		"VALUES (:tpl_name, :state, :idea, :title, :footer, :icon, :script)", m); err != nil {
 		return errors.Wrap(err, "failed to create movie")
 	}
 
@@ -75,15 +89,30 @@ func (m *Movie) Create() error {
 }
 
 func (m *Movie) Update() error {
-	if _, err := db.NamedExec("UPDATE movies SET state = :state, idea = :idea, title = :title, footer = :footer, icon = :icon, script_content = :script_content WHERE id = :id", m); err != nil {
+	if _, err := db.NamedExec("UPDATE movies SET state = :state, idea = :idea, title = :title, footer = :footer, icon = :icon, script = :script WHERE id = :id", m); err != nil {
 		return errors.Wrap(err, "failed to update movie")
 	}
 
 	return nil
 }
 
-func ListMovies() ([]Movie, error) {
-	var movies []Movie
+func (m *Movie) GetScript() (*MovieScript, error) {
+	var script MovieScript
+	script.ScriptItems = make([]*ScriptItem, 0)
+
+	if !m.Script.Valid {
+		return &script, nil // No script content available
+	}
+
+	if err := json.Unmarshal([]byte(m.Script.String), &script); err != nil {
+		return &script, errors.Wrap(err, "failed to unmarshal script content")
+	}
+
+	return &script, nil
+}
+
+func ListMovies() ([]*Movie, error) {
+	var movies []*Movie
 
 	if err := db.Select(&movies, "SELECT * FROM movies ORDER BY created_at DESC"); err != nil {
 		return nil, errors.Wrap(err, "failed to list movies")
@@ -111,26 +140,26 @@ func GetMovie(id int64) (*Movie, error) {
 	return &movie, nil
 }
 
-func (m Movie) MarshalJSON() ([]byte, error) {
+func (m *Movie) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Id            int64     `json:"id"`
-		TplName       string    `json:"tpl_name"`
-		State         string    `json:"state"`
-		Idea          string    `json:"idea"`
-		Title         string    `json:"title"`
-		Footer        string    `json:"footer"`
-		Icon          string    `json:"icon"`
-		ScriptContent string    `json:"script_content"`
-		CreatedAt     time.Time `json:"created_at"`
+		Id        int64     `json:"id"`
+		TplName   string    `json:"tpl_name"`
+		State     string    `json:"state"`
+		Idea      string    `json:"idea"`
+		Title     string    `json:"title"`
+		Footer    string    `json:"footer"`
+		Icon      string    `json:"icon"`
+		Script    string    `json:"script"`
+		CreatedAt time.Time `json:"created_at"`
 	}{
-		Id:            m.Id,
-		TplName:       m.TplName,
-		State:         m.State,
-		Idea:          m.Idea.String,
-		Title:         m.Title.String,
-		Footer:        m.Footer.String,
-		Icon:          m.Icon.String,
-		ScriptContent: m.ScriptContent.String,
-		CreatedAt:     m.CreatedAt,
+		Id:        m.Id,
+		TplName:   m.TplName,
+		State:     m.State,
+		Idea:      m.Idea.String,
+		Title:     m.Title.String,
+		Footer:    m.Footer.String,
+		Icon:      m.Icon.String,
+		Script:    m.Script.String,
+		CreatedAt: m.CreatedAt,
 	})
 }
