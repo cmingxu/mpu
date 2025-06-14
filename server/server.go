@@ -164,7 +164,7 @@ func (s *Server) Start() error {
 			return
 		}
 
-		if movie.Idea.String != binding.Idea {
+		if len(binding.Idea) != 0 && movie.Idea.String != binding.Idea {
 			movie.Idea = sql.NullString{String: binding.Idea, Valid: true}
 			if err := movie.Update(); err != nil {
 				c.JSON(500, gin.H{"error": err.Error()})
@@ -234,7 +234,7 @@ func (s *Server) Start() error {
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 		}
-		fp := fmt.Sprintf("movie/%d/audio/%d.mp3",
+		fp := fmt.Sprintf("/movie/%d/audio/%d.mp3",
 			movieIdInt, scriptIndexInt)
 		if err := saveMp3File(content, s.workdir, fp); err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})

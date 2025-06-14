@@ -37,19 +37,18 @@ The main language of the script is Chinese, with English translation provided fo
 ## image generation prompt requirements:
 1, image generation prompt should be in chinese, and should be descriptive enough for image generation.
 2, the target image should be related to the subtitle.
-3, the porompt must contain 火柴人，矢量图，黑白图标风格，简约白色透明背景, 避免黑色底色, 线条粗细适中，线条清晰，线条流畅, 线条简洁, 线条不交叉, 线条不重叠, 线条不模糊, 线条不粗糙, 线条不复杂, 线条不花哨, 线条不夸张, 线条不浮夸, 线条不繁琐, 线条不冗余.
-
+3, the porompt must contain 火柴人，矢量图，黑白图标风格，简约，透明底色，线条粗细适中，线条清晰，线条流畅, 线条简洁, 线条不交叉, 线条不重叠, 线条不模糊, 线条不粗糙, 线条不复杂, 线条不花哨, 线条不夸张, 线条不浮夸, 线条不繁琐, 线条不冗余.
 
 ## response
-1, response should be a json object with title and script_items.
-2, only return the json object, do not add any other text.
+1, response should be a json object with title and script_items, script_items field is an array of objects, each object should contain cn, en, image_prompt fields.
+2, return only the json string iteself, do not add any other text, do not add any explanation or comments, and do not add any markdown code block.
 
 
 ## If you failed to generate content
 response with "ERROR[actual_message]" if you can not generage a result, where the "actual_message" is where the real message.
 
 ## Response format:
-{"title": "视频标题", "script_items": [{"cn":"中文字幕","en":"English Subtitle", "image_prompt": ""},{"cn":"中文字幕","en":"English Subtitle", "image_prompt": ""}]}
+{"title":"视频标题","script_items":[{"cn":"中文字幕","en":"English Subtitle","image_prompt":""},{"cn":"中文字幕","en":"English Subtitle","image_prompt":""}]}
 `
 
 var (

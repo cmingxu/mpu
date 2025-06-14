@@ -3,6 +3,7 @@ package model
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -80,11 +81,13 @@ func NewMovie() *Movie {
 }
 
 func (m *Movie) Create() error {
-	if _, err := db.NamedExec("INSERT INTO movies (tpl_name, state, idea, title, footer, icon, script)"+
-		"VALUES (:tpl_name, :state, :idea, :title, :footer, :icon, :script)", m); err != nil {
+	result, err := db.NamedExec("INSERT INTO movies (tpl_name, state, idea, title, footer, icon, script)"+
+		"VALUES (:tpl_name, :state, :idea, :title, :footer, :icon, :script)", m)
+	if err != nil {
 		return errors.Wrap(err, "failed to create movie")
 	}
 
+	m.Id, _ = result.LastInsertId()
 	return nil
 }
 
@@ -92,6 +95,8 @@ func (m *Movie) Update() error {
 	if _, err := db.NamedExec("UPDATE movies SET state = :state, idea = :idea, title = :title, footer = :footer, icon = :icon, script = :script WHERE id = :id", m); err != nil {
 		return errors.Wrap(err, "failed to update movie")
 	}
+
+	fmt.Println("11111111111111")
 
 	return nil
 }
