@@ -189,6 +189,7 @@ func (s *Server) Start() error {
 		}
 
 		movie.Script = sql.NullString{String: scripts, Valid: true}
+		movie.State = model.StateScriptGenerated.String()
 		if err := movie.Update(); err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
@@ -292,6 +293,7 @@ func (s *Server) Start() error {
 
 		raw, _ := json.Marshal(script)
 		movie.Script = sql.NullString{String: string(raw), Valid: true}
+		movie.State = model.StateAudioGenerated.String()
 		if err := movie.Update(); err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
@@ -397,6 +399,7 @@ func (s *Server) Start() error {
 
 		raw, _ := json.Marshal(script)
 		movie.Script = sql.NullString{String: string(raw), Valid: true}
+		movie.State = model.StateImageGenerated.String()
 		if err := movie.Update(); err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return

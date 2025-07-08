@@ -3,7 +3,6 @@ package model
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,6 +14,14 @@ func StateFromString(s string) State {
 	switch s {
 	case "init":
 		return StateInit
+	case "script_generated":
+		return StateScriptGenerated
+	case "audio_generated":
+		return StateAudioGenerated
+	case "image_generated":
+		return StateImageGenerated
+	case "video_generated":
+		return StateVideoGenerated
 	default:
 		return State(s)
 	}
@@ -25,7 +32,11 @@ func (s State) String() string {
 }
 
 const (
-	StateInit State = "init" // 正常
+	StateInit            State = "init"             // 正常
+	StateScriptGenerated State = "script_generated" // 脚本已生成
+	StateAudioGenerated  State = "audio_generated"  // 音频已生成
+	StateImageGenerated  State = "image_generated"  // 图片已生成
+	StateVideoGenerated  State = "video_generated"  // 视频已生成
 )
 
 var MovieCreationSchema = `
@@ -95,8 +106,6 @@ func (m *Movie) Update() error {
 	if _, err := db.NamedExec("UPDATE movies SET state = :state, idea = :idea, title = :title, footer = :footer, icon = :icon, script = :script WHERE id = :id", m); err != nil {
 		return errors.Wrap(err, "failed to update movie")
 	}
-
-	fmt.Println("11111111111111")
 
 	return nil
 }
